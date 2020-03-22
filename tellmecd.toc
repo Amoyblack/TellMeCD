@@ -1,0 +1,7 @@
+## Interface: 80300
+## Title: TellMeCD
+## Version: 8.3.0
+## Notes: Send Spell CoolDown Msg to Group or Raid
+## Author: Flyover-埃德萨拉 CN
+
+tellmecd.lua
