@@ -2,8 +2,17 @@ local AddonPrintlogo = "|cFF00FF7F[TellMeCD]|r: "
 local bCanShow = true
 local altFrame = CreateFrame("Frame")
 local iSpellid = 0
-local timei = 0
+local zhCNLocal = {
+    [1] = " %s > 冷却中 (还有%d秒)",
+    [2] = " %s > 准备就绪！",
+}
 
+local enUSLocal = {
+    [1] = " %s > is cooling down (%d sec remaing)",
+    [2] = " %s > is Ready！",    
+}
+
+local CurrentLocal = {}
 
 local function SetSpellID(id)
 	iSpellid = id
@@ -28,34 +37,58 @@ local function TellCD()
 	if duration > 0 then
 		local ServerTime = GetTime()
 		local remaingcd = start + duration - ServerTime
-		local msg = string.format(" %s > 冷却中 (还有%d秒)",GetSpellLink(iSpellid), remaingcd)
+		local msg = string.format(CurrentLocal[1],GetSpellLink(iSpellid), remaingcd)
 		SendCDMsg(msg)
 	elseif enable == 1 then
-		local msg = string.format(" %s > 准备就绪！",GetSpellLink(iSpellid))
+		local msg = string.format(CurrentLocal[2],GetSpellLink(iSpellid))
 		SendCDMsg(msg)
 	end
 end
 
 
+local function RepeatMethod()
+    if bCanShow and IsAltKeyDown() then
+        TellCD()
+        bCanShow = false
+    elseif not IsAltKeyDown() then
+        bCanShow = true
+    end
+end
 
-GameTooltip:HookScript("OnTooltipSetSpell", function(self)
-  local id = select(2, self:GetSpell())
-  SetSpellID(id)
-end)
+local function OnSpellTooltipFunc(tooltip, data)
+    if data and data.id then
+        SetSpellID(data.id)
+    end
+end
+
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, OnSpellTooltipFunc)
+
+-- GameTooltip:HookScript("OnTooltipSetSpell", function(self)
+--   local id = select(2, self:GetSpell())
+--   SetSpellID(id)
+-- end)
 
 GameTooltip:HookScript("OnHide", function(self)
 	SetSpellID(0)
 end)
 
-altFrame:SetScript("OnUpdate", function (self, elasped)
-	timei = timei + elasped
-	if timei > 0.1 then
-		if bCanShow and IsAltKeyDown() then
-			TellCD()
-			bCanShow = false
-		elseif not IsAltKeyDown() then
-			bCanShow = true
-		end
-		timei = 0
-	end
-end)
+
+local function On_EventCB(self, event, arg)
+    if event == "PLAYER_ENTERING_WORLD" then
+        local clientlang = GetLocale()
+        if clientlang == "zhCN" or clientlang == "zhTW" then
+            CurrentLocal = zhCNLocal
+        else
+            CurrentLocal = enUSLocal
+        end
+    end
+end
+
+
+altFrame:SetScript("OnEvent", On_EventCB)
+altFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+
+if not altFrame.Ticker then
+    altFrame.Ticker = C_Timer.NewTicker(0.07, RepeatMethod)
+end

@@ -1,6 +1,6 @@
-## Interface: 80300
+## Interface: 100002
 ## Title: TellMeCD
-## Version: 8.3.0
+## Version: 10.0.2
 ## Notes: Send Spell CoolDown Msg to Group or Raid
 ## Author: Flyover-埃德萨拉 CN
 
